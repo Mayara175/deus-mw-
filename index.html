@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Clientes</title>
+  <button onclick="mostrarLocalStorage()">🔍 Ver localStorage</button>
+
+  <button onclick="limparLocalStorage()">🧹 Limpar localStorage</button>
+
+<pre id="saidaLocalStorage" style="white-space:pre-wrap; background:#003366; padding:10px; border-radius:8px; margin-top:10px;"></pre>
+
+  <style>
+    
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #001f3f;
+      color: white;
+      padding: 20px;
+    }
+
+    input, button {
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    input {
+      width: 100%;
+    }
+
+    button {
+      background-color: #00ccff;
+      color: #001f3f;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    h2 {
+      color: #00ccff;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background-color: #003366;
+      margin-bottom: 5px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>📋 Cadastro de Clientes</h2>
+
+  <input type="text" id="nome" placeholder="Nome">
+  <input type="email" id="email" placeholder="E-mail">
+  <input type="tel" id="telefone" placeholder="Telefone">
+  <button onclick="cadastrarCliente()">Cadastrar Cliente</button>
+
+  <h3>📦 Exportar / Importar</h3>
+  <button onclick="exportarJSON()">Exportar JSON</button><br><br>
+  <input type="file" id="inputJSON" accept=".json">
+  <button onclick="importarJSON()">Importar JSON</button>
+
+  <h3>👀 Clientes Cadastrados:</h3>
+  <ul id="listaClientes"></ul>
+
+  <script>
+    class Cliente {
+      constructor(nome, email, telefone) {
+        this.nome = nome;
+        this.email = email;
+        this.telefone = telefone;
+      }
+    }
+
+    let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+
+    function salvarNoLocalStorage() {
+      localStorage.setItem("clientes", JSON.stringify(clientes));
+    }
+
+    function cadastrarCliente() {
+      const nome = document.getElementById("nome").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const telefone = document.getElementById("telefone").value.trim();
+
+      if (!nome || !email || !telefone) {
+        alert("Preencha todos os campos!");
+        return;
+      }
+
+      const novoCliente = new Cliente(nome, email, telefone);
+      clientes.push(novoCliente);
+      salvarNoLocalStorage();
+      exibirClientes();
+
+      document.getElementById("nome").value = "";
+      document.getElementById("email").value = "";
+      document.getElementById("telefone").value = "";
+    }
+
+    function exibirClientes() {
+      const lista = document.getElementById("listaClientes");
+      lista.innerHTML = "";
+
+      clientes.forEach((c, i) => {
+        const li = document.createElement("li");
+        li.textContent = `📌 ${c.nome} | ✉️ ${c.email} | 📞 ${c.telefone}`;
+        lista.appendChild(li);
+      });
+    }
+
+    function exportarJSON() {
+      const blob = new Blob([JSON.stringify(clientes, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'clientes.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function importarJSON() {
+      const input = document.getElementById("inputJSON");
+      const file = input.files[0];
+
+      if (!file) {
+        alert("Selecione um arquivo JSON!");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const dados = JSON.parse(e.target.result);
+          if (Array.isArray(dados)) {
+            dados.forEach(d => {
+              if (d.nome && d.email && d.telefone) {
+                clientes.push(new Cliente(d.nome, d.email, d.telefone));
+              }
+            });
+            salvarNoLocalStorage();
+            exibirClientes();
+            alert("Importação concluída!");
+          } else {
+            alert("Formato de JSON inválido.");
+          }
+        } catch (error) {
+          alert("Erro ao ler o arquivo JSON.");
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    // Exibir os clientes ao carregar a página
+    exibirClientes();
+
+    function mostrarLocalStorage() {
+  const dados = localStorage.getItem("clientes");
+  const saida = document.getElementById("saidaLocalStorage");
+
+  if (dados) {
+    try {
+      const parsed = JSON.parse(dados);
+      saida.textContent = JSON.stringify(parsed, null, 2); // Bonito e indentado
+    } catch (e) {
+      saida.textContent = "Erro ao ler os dados: " + e.message;
+    }
+  } else {
+    saida.textContent = "⚠️ Nenhum dado encontrado no localStorage.";
+  }
+}
+
+function limparLocalStorage() {
+  if (confirm("Tem certeza que deseja apagar todos os dados?")) {
+    localStorage.removeItem("clientes"); // ou localStorage.clear() para apagar tudo
+    clientes = [];
+    exibirClientes();
+    document.getElementById("saidaLocalStorage").textContent = "📭 localStorage limpo!";
+    alert("Todos os dados foram apagados.");
+  }
+}
+
+  </script>
+</body>
+</html>
